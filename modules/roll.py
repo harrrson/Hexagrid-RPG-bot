@@ -217,7 +217,7 @@ class Rolling(commands.Cog, name='Dice rolling'):
                 message +=f' Result: {result2}'
         await ctx.send(message)
 
-    @roll.command(name='fate', hel'Rolls two sided dice, and shows fate result depending on roll')
+    @roll.command(name='fate', help='Rolls two sided dice, and shows fate result depending on roll')
     async def fate(self, ctx, *, args: str = ''):
         result = random.randint(0, 1)
         if '!' in args:
