@@ -2,7 +2,6 @@ from discord.ext import commands
 import typing
 import re
 import random
-import asyncio
 
 
 async def _find_comment(text: str) -> str:
@@ -15,7 +14,6 @@ async def _find_comment(text: str) -> str:
 
 
 async def _split_roll_command(command: str):
-    is_valid = False
     rolls_valid = False
     size_valid = False
     mod_valid = False
@@ -28,6 +26,7 @@ async def _split_roll_command(command: str):
     minus_count = command.count('-')
     mul_count = command.count('*')
     div_count = command.count('/')
+    print(command)
     if command.count('d') == 1 and (plus_count + minus_count + mul_count + div_count) < 2 and not re.search(
             '[a-ce-z!@#$%^&(){}[]:~`";=_,.?/|]', command):
         rolls, dice_size = command.split('d')
@@ -85,6 +84,7 @@ async def _roll(dice_size: int = 10, n_of_rolls: int = 1, roll_modifier: int = 0
             result = sum(rolls) / roll_modifier
     else:
         result = sum(rolls)
+        print(dice_size, roll_modifier, roll_modifier_type, result)
     return rolls, result
 
 
@@ -170,10 +170,10 @@ class Rolling(commands.Cog, name='Dice rolling'):
 
     @roll.command(name='duel', help='Makes a duel between two players, and shows a winner')
     async def duel(self, ctx, roll1='d10', roll2='d10', player1='', player2='', *, args=''):
-        valid_command1, simult_rolls1, dice_size1, modifier1, operator1 = await asyncio.create_task(
-            _split_roll_command(roll1))
-        valid_command2, simult_rolls2, dice_size2, modifier2, operator2 = await asyncio.create_task(
-            _split_roll_command(roll2))
+        valid_command1, simult_rolls1, dice_size1, modifier1, operator1 = await _split_roll_command(roll1)
+
+        valid_command2, simult_rolls2, dice_size2, modifier2, operator2 = await _split_roll_command(roll2)
+
         if not valid_command1 or not valid_command2:
             await ctx.send('Command is not valid.')
             return
@@ -185,8 +185,8 @@ class Rolling(commands.Cog, name='Dice rolling'):
             return
         if dice_size1 < 2 or dice_size1 > self.__max_dice or dice_size2 < 2 or dice_size2 > self.__max_dice:
             ctx.send(f'You need to choose dice between 2-{self.__max_dice}')
-        roll_list1, result1 = await asyncio.create_task(_roll(dice_size1, simult_rolls1, modifier1, operator1))
-        roll_list2, result2 = await asyncio.create_task(_roll(dice_size1, simult_rolls1, modifier1, operator1))
+        roll_list1, result1 = await _roll(dice_size1, simult_rolls1, modifier1, operator1)
+        roll_list2, result2 = await _roll(dice_size2, simult_rolls2, modifier2, operator2)
         message = random.choice(self.__duel_texts) + '\n'
         if player1 and player2:
             message += "   " + player1 + " vs " + player2 + "\n"
@@ -202,19 +202,19 @@ class Rolling(commands.Cog, name='Dice rolling'):
         if result1 == result2:
             message += "   " + str(result1) + "  " + str(result2) + "\nDraw!"
         if player1 and player2:
-            message+=f'\n{player1}\'s rolls: {roll_list1}'
-            if simult_rolls1>1 or operator1:
-                message +=f' Result: {result1}'
+            message += f'\n{player1}\'s rolls: {roll_list1}'
+            if simult_rolls1 > 1 or operator1:
+                message += f' Result: {result1}'
             message += f'\n{player2}\'s roll: {roll_list2}'
-            if simult_rolls2>1 or operator2:
-                message +=f' Result: {result2}'
+            if simult_rolls2 > 1 or operator2:
+                message += f' Result: {result2}'
         else:
             message += f'\n First roll: {roll_list1}'
-            if simult_rolls1>1 or operator1:
-                message +=f' Result: {result1}'
+            if simult_rolls1 > 1 or operator1:
+                message += f' Result: {result1}'
             message += f'\n Second roll: {roll_list2}'
-            if simult_rolls2>1 or operator2:
-                message +=f' Result: {result2}'
+            if simult_rolls2 > 1 or operator2:
+                message += f' Result: {result2}'
         await ctx.send(message)
 
     @roll.command(name='fate', help='Rolls two sided dice, and shows fate result depending on roll')
