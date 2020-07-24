@@ -5,7 +5,7 @@ import os
 
 bot_token = secret_file.BOT_TOKEN
 
-bot = commands.Bot( command_prefix='d!dc ', case_insensitive=True)
+bot = commands.Bot( command_prefix='!dc ', case_insensitive=True)
 
 @bot.event
 async def on_ready( ):
