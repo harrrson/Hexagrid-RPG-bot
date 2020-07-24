@@ -5,7 +5,6 @@ import random
 
 
 async def _find_comment(text: str) -> str:
-    print(text)
     if '!' in text:
         comment = ' Comment: ' + text[text.find('!') + 1:]
     else:
@@ -26,7 +25,6 @@ async def _split_roll_command(command: str):
     minus_count = command.count('-')
     mul_count = command.count('*')
     div_count = command.count('/')
-    print(command)
     if command.count('d') == 1 and (plus_count + minus_count + mul_count + div_count) < 2 and not re.search(
             '[a-ce-z!@#$%^&(){}[]:~`";=_,.?/|]', command):
         rolls, dice_size = command.split('d')
@@ -84,7 +82,6 @@ async def _roll(dice_size: int = 10, n_of_rolls: int = 1, roll_modifier: int = 0
             result = sum(rolls) / roll_modifier
     else:
         result = sum(rolls)
-        print(dice_size, roll_modifier, roll_modifier_type, result)
     return rolls, result
 
 
