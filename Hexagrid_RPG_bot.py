@@ -5,7 +5,7 @@ import os
 
 bot_token = secret_file.BOT_TOKEN
 
-bot = commands.Bot( command_prefix='!dc ', case_insensitive=True)
+bot = commands.Bot( command_prefix='d!dc ', case_insensitive=True)
 
 @bot.event
 async def on_ready( ):
@@ -23,8 +23,9 @@ async def load( ctx,extension ):
 		await ctx.send(f'Module {extension} is already loaded!')
 	except commands.NoEntryPointError:
 		await ctx.send(f'No setup() function found in module ')
-	except commands.ExtensionFailed:
+	except commands.ExtensionFailed as e:
 		await ctx.send(f'Module {extension} raise an error during execution')
+		print(str(e))
 
 @bot.command( hidden=True )
 @commands.is_owner( )
