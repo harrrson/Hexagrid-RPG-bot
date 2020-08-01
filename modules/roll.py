@@ -1,7 +1,29 @@
-from discord.ext import commands
-import typing
-import re
 import random
+import re
+import typing
+
+from discord.ext import commands
+
+
+async def _print_rolling_result(player1, player2, result1, result2, roll_list1, roll_list2, simult_rolls1,
+                                simult_rolls2, operator1, operator2):
+    message = ''
+    if player1 and player2:
+        message += f'\n{player1}\'s rolls: {roll_list1}'
+        if simult_rolls1 > 1 or operator1:
+            message += f' Result: {result1}'
+        message += f'\n{player2}\'s roll: {roll_list2}'
+        if simult_rolls2 > 1 or operator2:
+            message += f' Result: {result2}'
+    # In other case, write default text and rolls
+    else:
+        message += f'\n First roll: {roll_list1}'
+        if simult_rolls1 > 1 or operator1:
+            message += f' Result: {result1}'
+        message += f'\n Second roll: {roll_list2}'
+        if simult_rolls2 > 1 or operator2:
+            message += f' Result: {result2}'
+    return message
 
 
 async def _find_comment(text: str) -> str:
@@ -80,6 +102,8 @@ async def _roll(dice_size: int = 10, n_of_rolls: int = 1, roll_modifier: int = 0
             result = sum(rolls) * roll_modifier
         elif roll_modifier_type == '/':
             result = sum(rolls) / roll_modifier
+        else:
+            result = sum(rolls)
     else:
         result = sum(rolls)
     return rolls, result
@@ -166,11 +190,18 @@ class Rolling(commands.Cog, name='Dice rolling'):
             await ctx.send(part_message)
 
     @roll.command(name='duel', help='Makes a duel between two players, and shows a winner')
-    async def duel(self, ctx, roll1='d10', roll2='d10', player1='', player2='', *, args=''):
-        valid_command1, simult_rolls1, dice_size1, modifier1, operator1 = await _split_roll_command(roll1)
+    async def duel(self, ctx, attacker_roll='d10', defender_roll='d10', attacker_name='', defender_name='', *, args=''):
+        """Rolls 2 sets of dice. Then, depending of roll result and counteraction, shows winner of duel."""
 
-        valid_command2, simult_rolls2, dice_size2, modifier2, operator2 = await _split_roll_command(roll2)
+        _counter = False
+        _block = False
+        _dodge = False
 
+        # Checks, if roll commands are valid, and splits it between corresponding variables
+        valid_command1, simult_rolls1, dice_size1, modifier1, operator1 = await _split_roll_command(attacker_roll)
+        valid_command2, simult_rolls2, dice_size2, modifier2, operator2 = await _split_roll_command(defender_roll)
+
+        # Set of checks, if command is valid
         if not valid_command1 or not valid_command2:
             await ctx.send('Command is not valid.')
             return
@@ -182,36 +213,94 @@ class Rolling(commands.Cog, name='Dice rolling'):
             return
         if dice_size1 < 2 or dice_size1 > self.__max_dice or dice_size2 < 2 or dice_size2 > self.__max_dice:
             ctx.send(f'You need to choose dice between 2-{self.__max_dice}')
+
+        # dice rolls for each player
         roll_list1, result1 = await _roll(dice_size1, simult_rolls1, modifier1, operator1)
         roll_list2, result2 = await _roll(dice_size2, simult_rolls2, modifier2, operator2)
+
+        # random start message
         message = random.choice(self.__duel_texts) + '\n'
-        if player1 and player2:
-            message += "   " + player1 + " vs " + player2 + "\n"
-        if result1 > result2:
-            message += "   " + ("  " * len(player1)) + "__**" + str(result1) + "**__      " + str(
-                result2) + "\n"
-            if player1:
-                message += player1 + " wins this duel"
-        if result1 < result2:
-            message += "   " + ("  " * len(player1)) + str(result1) + "      __**" + str(result2) + "**__\n"
-            if player2:
-                message += player2 + " wins this duel"
-        if result1 == result2:
-            message += "   " + str(result1) + "  " + str(result2) + "\nDraw!"
-        if player1 and player2:
-            message += f'\n{player1}\'s rolls: {roll_list1}'
-            if simult_rolls1 > 1 or operator1:
-                message += f' Result: {result1}'
-            message += f'\n{player2}\'s roll: {roll_list2}'
-            if simult_rolls2 > 1 or operator2:
-                message += f' Result: {result2}'
+
+        # check, if player defines counteraction of the defender (second player)
+        if args.startswith('counter') or args.startswith('counterattack'):
+            _counter = True
+        elif args.startswith('block'):
+            _block = True
+        elif args.startswith('dodge'):
+            _dodge = True
+
+        # write names of players, if given
+        if attacker_name and defender_name:
+            message += "   " + attacker_name + " vs " + defender_name + "\n\n"
+
+        # if defender is blocking:
+        if _block or _dodge:
+            # loop until players have different roll results
+            while result1 == result2:
+                message += "   " + str(result1) + "  " + str(result2) + "\nDraw! Let's reroll"
+                message += await _print_rolling_result(attacker_name, defender_name, result1, result2, roll_list1,
+                                                       roll_list2, simult_rolls1, simult_rolls2, operator1, operator2)
+                message+='\n\n'
+                roll_list1, result1 = await _roll(dice_size1, simult_rolls1, modifier1, operator1)
+                roll_list2, result2 = await _roll(dice_size2, simult_rolls2, modifier2, operator2)
+            else:
+                if result1 > result2:
+                    message += "   " + ("  " * len(attacker_name)) + "__**" + str(result1) + "**__      " + str(
+                        result2) + "\n"
+                    if attacker_name:
+                        if defender_name:
+                            name_in_message=f" {defender_name} "
+                        else:
+                            name_in_message=" "
+                        message += f"{attacker_name} attacks{name_in_message}succesfully!"
+                else:
+                    message += "   " + ("  " * len(attacker_name)) + str(result1) + "      __**" + str(
+                        result2) + "**__\n"
+                    if defender_name:
+                        if attacker_name:
+                            name_in_message=f" {attacker_name}'s "
+                        else:
+                            name_in_message=" "
+                        if _block:
+                            message += f"{defender_name} blocks{name_in_message}attack succesfully!"
+                        elif _dodge:
+                            message += f"{defender_name} dodge{name_in_message}attack succesfully!"
+                message += await _print_rolling_result(attacker_name, defender_name, result1, result2, roll_list1,
+                                                       roll_list2, simult_rolls1, simult_rolls2, operator1, operator2)
+        elif _counter:
+            if result1 > result2-3:
+                message += "   " + ("  " * len(attacker_name)) + "__**" + str(result1) + "**__      " + str(
+                    result2) + "\n"
+                if attacker_name:
+                    if defender_name:
+                        name_in_message = f" {defender_name} "
+                    else:
+                        name_in_message = " "
+                    message += f"{attacker_name} attacks{name_in_message}succesfully! Counterattack failed!"
+            else:
+                message += "   " + ("  " * len(attacker_name)) + str(result1) + "      __**" + str(
+                    result2) + "**__\n"
+                if defender_name:
+                    if attacker_name:
+                        name_in_message = f" {attacker_name}'s "
+                    else:
+                        name_in_message = " "
+                    message += f"{defender_name} counter{name_in_message}attack succesfully!"
         else:
-            message += f'\n First roll: {roll_list1}'
-            if simult_rolls1 > 1 or operator1:
-                message += f' Result: {result1}'
-            message += f'\n Second roll: {roll_list2}'
-            if simult_rolls2 > 1 or operator2:
-                message += f' Result: {result2}'
+            if result1 > result2 and not _counter:
+                message += "   " + ("  " * len(attacker_name)) + "__**" + str(result1) + "**__      " + str(
+                    result2) + "\n"
+                if attacker_name:
+                    message += attacker_name + " wins this duel"
+            if result1 < result2:
+                message += "   " + ("  " * len(attacker_name)) + str(result1) + "      __**" + str(result2) + "**__\n"
+                if defender_name:
+                    message += defender_name + " wins this duel"
+            if result1 == result2:
+                message += "   " + str(result1) + "  " + str(result2) + "\nDraw!"
+            # If player names was given, write their names ad rolls
+            message += await _print_rolling_result(attacker_name, defender_name, result1, result2, roll_list1,
+                                                   roll_list2, simult_rolls1, simult_rolls2, operator1, operator2)
         await ctx.send(message)
 
     @roll.command(name='fate', help='Rolls two sided dice, and shows fate result depending on roll')
