@@ -2,14 +2,39 @@ import random
 import secret_file
 from discord.ext import commands
 import os
+from modules.db_management._db_management import Database
+
+prefixes = {}
+default_prefix=['d!dc ']
+
+async def guild_prefix(bot,message):
+	guild=message.guild
+	if guild:
+		return prefixes.get(guild.id,default_prefix)
+	else:
+		return default_prefix
 
 bot_token = secret_file.BOT_TOKEN
 
-bot = commands.Bot( command_prefix='d!dc ', case_insensitive=True)
+bot = commands.Bot( command_prefix=guild_prefix, case_insensitive=True)
+
+
 
 @bot.event
 async def on_ready( ):
 	print( 'Logged in as {}'.format( bot.user.name ) )
+
+	for guild in bot.guilds:
+		db=Database(guild.id)
+		db_conn=await db.connect()
+		if not db_conn:
+			await db.create_guild_db()
+			prefixes[guild.id]=default_prefix
+		else:
+			result=await db.fetch_table_columns("guild_settings","parameter","pref","value")
+			prefixes[guild.id]=result["value"]
+			await db.disconnect()
+	print(prefixes)
 
 @bot.command( hidden=True )
 @commands.is_owner( )
