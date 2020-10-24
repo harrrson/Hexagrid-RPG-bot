@@ -1,24 +1,28 @@
 # I am lazy af, so i copied this template and tweaked it a little:
 # https://github.com/Devoxin/Lavalink.py/blob/master/examples/music.py
 
-import discord
-from discord.ext import commands
-import lavalink
 import re
+
+import discord
+import lavalink
+from discord.ext import commands
 
 url_rx = re.compile(r'https?://(?:www\.)?.+')
 
 
 class MusicPlayer(commands.Cog, name='Music module'):
-
     def __init__(self, bot):
         self.bot = bot
 
-        if not hasattr(bot, 'lavalink'):  # This ensures the client isn't overwritten during cog reloads.
+        if not hasattr(
+                bot, 'lavalink'
+        ):  # This ensures the client isn't overwritten during cog reloads.
             bot.lavalink = lavalink.Client(bot.user.id)
-            bot.lavalink.add_node('127.0.0.1', 2333, 'youshallnotpass', 'eu',
-                                  'default-node')  # Host, Port, Password, Region, Name
-            bot.add_listener(bot.lavalink.voice_update_handler, 'on_socket_response')
+            bot.lavalink.add_node(
+                '127.0.0.1', 2333, 'youshallnotpass', 'eu',
+                'default-node')  # Host, Port, Password, Region, Name
+            bot.add_listener(bot.lavalink.voice_update_handler,
+                             'on_socket_response')
 
         lavalink.add_event_hook(self.track_hook)
 
@@ -48,7 +52,9 @@ class MusicPlayer(commands.Cog, name='Music module'):
 
     async def ensure_voice(self, ctx):
         """ This check ensures that the bot and command author are in the same voicechannel. """
-        player = self.bot.lavalink.player_manager.create(ctx.guild.id, endpoint=str(ctx.guild.region))
+        player = self.bot.lavalink.player_manager.create(ctx.guild.id,
+                                                         endpoint=str(
+                                                             ctx.guild.region))
         # Create returns a player if one exists, otherwise creates.
         # This line is important because it ensures that a player always exists for a guild.
 
@@ -57,7 +63,7 @@ class MusicPlayer(commands.Cog, name='Music module'):
 
         # These are commands that require the bot to join a voicechannel (i.e. initiating playback).
         # Commands such as volume/skip etc don't require the bot to be in a voicechannel so don't need listing here.
-        should_connect = ctx.command.name in ('play',)
+        should_connect = ctx.command.name in ('play', )
 
         if not ctx.author.voice or not ctx.author.voice.channel:
             # Our cog_command_error handler catches this and sends it to the voicechannel.
@@ -72,13 +78,16 @@ class MusicPlayer(commands.Cog, name='Music module'):
             permissions = ctx.author.voice.channel.permissions_for(ctx.me)
 
             if not permissions.connect or not permissions.speak:  # Check user limit too?
-                raise commands.CommandInvokeError('I need the `CONNECT` and `SPEAK` permissions.')
+                raise commands.CommandInvokeError(
+                    'I need the `CONNECT` and `SPEAK` permissions.')
 
             player.store('channel', ctx.channel.id)
-            await self.connect_to(ctx.guild.id, str(ctx.author.voice.channel.id))
+            await self.connect_to(ctx.guild.id,
+                                  str(ctx.author.voice.channel.id))
         else:
             if int(player.channel_id) != ctx.author.voice.channel.id:
-                raise commands.CommandInvokeError('You need to be in my voicechannel.')
+                raise commands.CommandInvokeError(
+                    'You need to be in my voicechannel.')
 
     async def track_hook(self, event):
         if isinstance(event, lavalink.events.QueueEndEvent):
@@ -150,7 +159,9 @@ class MusicPlayer(commands.Cog, name='Music module'):
 
             # You can attach additional information to audiotracks through kwargs, however this involves
             # constructing the AudioTrack class yourself.
-            track = lavalink.models.AudioTrack(track, ctx.author.id, recommended=True)
+            track = lavalink.models.AudioTrack(track,
+                                               ctx.author.id,
+                                               recommended=True)
             player.add(requester=ctx.author.id, track=track)
 
         await ctx.send(embed=embed)
@@ -169,7 +180,9 @@ class MusicPlayer(commands.Cog, name='Music module'):
             # We can't disconnect, if we're not connected.
             return await ctx.send('Not connected.')
 
-        if not ctx.author.voice or (player.is_connected and ctx.author.voice.channel.id != int(player.channel_id)):
+        if not ctx.author.voice or (
+                player.is_connected
+                and ctx.author.voice.channel.id != int(player.channel_id)):
             # Abuse prevention. Users not in voice channels, or not in the same voice channel as the bot
             # may not disconnect the bot.
             return await ctx.send('You\'re not in my voicechannel!')

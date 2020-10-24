@@ -5,8 +5,8 @@ from .db_management._db_management import *
 async def check_permissions(ctx):
     author=ctx.message.author.id
     guild_owner=ctx.message.guild.owner.id
-    bot_owner=ctx.bot.owner_id
-    if (author==guild_owner) or (author==bot_owner):
+    #bot_owner=ctx.bot.owner_id
+    if (author==guild_owner):
         return True
     else:
         await ctx.send('You are not allowed to use this command')
