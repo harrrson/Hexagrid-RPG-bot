@@ -80,6 +80,7 @@ async def _roll(dice_size: int = 10,
             result = result * roll_modifier
         elif roll_modifier_type == '/':
             result = result / roll_modifier
+
     return rolls, result
 
 
@@ -201,6 +202,7 @@ class Rolling(commands.Cog, name='Dice rolling'):
         valid_command2, simult_rolls2, dice_size2, modifier2, operator2 = await _split_roll_command(
             roll2)
 
+        # Set of checks, if command is valid
         if not valid_command1 or not valid_command2:
             await ctx.send('Command is not valid.')
             return
@@ -243,12 +245,20 @@ class Rolling(commands.Cog, name='Dice rolling'):
             if simult_rolls2 > 1 or operator2:
                 message += f' Result: {result2}'
         else:
-            message += f'\n First roll: {roll_list1}'
-            if simult_rolls1 > 1 or operator1:
-                message += f' Result: {result1}'
-            message += f'\n Second roll: {roll_list2}'
-            if simult_rolls2 > 1 or operator2:
-                message += f' Result: {result2}'
+            if result1 > result2 and not _counter:
+                message += "   " + ("  " * len(attacker_name)) + "__**" + str(result1) + "**__      " + str(
+                    result2) + "\n"
+                if attacker_name:
+                    message += attacker_name + " wins this duel"
+            if result1 < result2:
+                message += "   " + ("  " * len(attacker_name)) + str(result1) + "      __**" + str(result2) + "**__\n"
+                if defender_name:
+                    message += defender_name + " wins this duel"
+            if result1 == result2:
+                message += "   " + str(result1) + "  " + str(result2) + "\nDraw!"
+            # If player names was given, write their names ad rolls
+            message += await _print_rolling_result(attacker_name, defender_name, result1, result2, roll_list1,
+                                                   roll_list2, simult_rolls1, simult_rolls2, operator1, operator2)
         await ctx.send(message)
 
     @roll.command(

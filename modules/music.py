@@ -38,17 +38,18 @@ class MusicPlayer(commands.Cog, name='Music module'):
 
         if guild_check:
             await self.ensure_voice(ctx)
-            #  Ensure that the bot and command author share a mutual voicechannel.
+        #  Ensure that the bot and command author share a mutual voicechannel.
 
         return guild_check
 
     async def cog_command_error(self, ctx, error):
         if isinstance(error, commands.CommandInvokeError):
             await ctx.send(error.original)
-            # The above handles errors thrown in this cog and shows them to the user.
-            # This shouldn't be a problem as the only errors thrown in this cog are from `ensure_voice`
-            # which contain a reason string, such as "Join a voicechannel" etc. You can modify the above
-            # if you want to do things differently.
+
+    # The above handles errors thrown in this cog and shows them to the user.
+    # This shouldn't be a problem as the only errors thrown in this cog are from `ensure_voice`
+    # which contain a reason string, such as "Join a voicechannel" etc. You can modify the above
+    # if you want to do things differently.
 
     async def ensure_voice(self, ctx):
         """ This check ensures that the bot and command author are in the same voicechannel. """
@@ -101,8 +102,9 @@ class MusicPlayer(commands.Cog, name='Music module'):
         """ Connects to the given voicechannel ID. A channel_id of `None` means disconnect. """
         ws = self.bot._connection._get_websocket(guild_id)
         await ws.voice_state(str(guild_id), channel_id)
-        # The above looks dirty, we could alternatively use `bot.shards[shard_id].ws` but that assumes
-        # the bot instance is an AutoShardedBot.
+
+    # The above looks dirty, we could alternatively use `bot.shards[shard_id].ws` but that assumes
+    # the bot instance is an AutoShardedBot.
 
     @commands.group(help='Music module', invoke_without_command=True)
     async def music(self, ctx, invalid_command: str, *, args=''):
@@ -196,13 +198,85 @@ class MusicPlayer(commands.Cog, name='Music module'):
         await self.connect_to(ctx.guild.id, None)
         await ctx.send('*⃣ | Disconnected.')
 
-    #TODO: add skip command
     @music.command(name='skip')
     async def skip(self, ctx):
-        print('skip')
-        await ctx.send('Command temporary unavailable')
+        """Skips current played song"""
+        player = self.bot.lavalink.player_manager.get(ctx.guild.id)
 
-    #TODO: Considering creating separate join function
+        if not player.is_connected:
+            # We can't skip music, when we don't play one.
+            return await ctx.send('Not connected.')
+
+        if not ctx.author.voice or (player.is_connected and ctx.author.voice.channel.id != int(player.channel_id)):
+            # Abuse prevention. Users not in voice channels, or not in the same voice channel as the bot
+            # may not skip the song.
+            return await ctx.send('You\'re not in my voicechannel!')
+
+        if not player.queue and not player.is_playing:
+            # cannot skip song if queue is empty
+            return await ctx.send('There are no songs to skip!')
+
+        await player.skip()
+
+        if not player.queue and not player.is_playing:
+            player.queue.clear()
+            await player.stop()
+            await self.connect_to(ctx.guild.id, None)
+            await ctx.send('No more songs in queue. Disconnected.')
+            return
+
+    @music.command(name='pause')
+    async def pause(self,ctx):
+        player = self.bot.lavalink.player_manager.get(ctx.guild.id)
+
+        if not player.is_connected:
+            # We can't pause music when we are not connected.
+            return await ctx.send('Not connected.')
+
+        if not ctx.author.voice or (player.is_connected and ctx.author.voice.channel.id != int(player.channel_id)):
+            # Abuse prevention. Users not in voice channels, or not in the same voice channel as the bot
+            # may not pause the song.
+            return await ctx.send('You\'re not in my voicechannel!')
+
+        if not player.is_playing:
+            # Cannot pause song if none is played
+            return await ctx.send('No music is currently played!')
+
+        if player.paused:
+            # Cannot pause actually paused music
+            return await ctx.send('Music is actually paused')
+
+        await player.set_pause(pause=True)
+
+        await ctx.send('Song paused!')
+
+    @music.command(name='resume')
+    async def resume(self, ctx):
+        player = self.bot.lavalink.player_manager.get(ctx.guild.id)
+
+        if not player.is_connected:
+            # We can;t pause music when we are not connected.
+            return await ctx.send('Not connected.')
+
+        if not ctx.author.voice or (player.is_connected and ctx.author.voice.channel.id != int(player.channel_id)):
+            # Abuse prevention. Users not in voice channels, or not in the same voice channel as the bot
+            # may not pause the song.
+            return await ctx.send('You\'re not in my voicechannel!')
+
+        if not player.is_playing:
+            # Cannot resume song if none is played
+            return await ctx.send('No music is currently chosen!')
+
+        if not player.paused:
+            # Cannot resume actually playing music
+            return await ctx.send('Music is actually played')
+
+        await player.set_pause(False)
+
+        await ctx.send('Song resumed!')
+
+
+    # TODO: Considering creating separate join function
     @music.command(name='join')
     async def join(self, ctx):
         print('Invalid command')
