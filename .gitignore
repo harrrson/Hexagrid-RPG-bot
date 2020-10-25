@@ -1,3 +1,6 @@
 /old_version/
 /lavalink/
 /venv/
+secret_file.py
+__pycache__/
+*/*.yml

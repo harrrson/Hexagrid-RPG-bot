@@ -32,6 +32,6 @@ class Bot_client(discord.Client):
 			#	await ci_manager.init(mydb,message,command[1:])
 			#	return
 
-			#if command[0].lower()=='session' and message.guild.id==test_server_id:
+			#if command[0].lower()=='session_modules' and message.guild.id==test_server_id:
 			#	await db_manager.check_guild_db(message.guild)
 			#	return

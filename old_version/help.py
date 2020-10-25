@@ -1,6 +1,6 @@
 import discord
 
-__modules={'roll','cc','session'}
+__modules={'roll','cc','session_modules'}
 
 __main_help="Main help text"
 __roll_help="Roll module help"
