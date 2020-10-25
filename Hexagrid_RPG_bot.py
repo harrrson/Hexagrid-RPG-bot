@@ -3,7 +3,8 @@ import random
 
 import secret_file
 from discord.ext import commands
-from modules.db_management._db_management import Database
+
+# from modules.db_management._db_management import Database
 
 prefixes = {}
 default_prefix = ['d!dc ']

@@ -6,12 +6,7 @@ from discord.ext import commands
 
 
 async def _find_comment(text: str) -> str:
-    if '!' in text:
-        comment = ' Comment: ' + text[text.find('!') + 1:]
-    else:
-        comment = ''
-    return 'Comment: ' + text[text.find('!') +
-                              1:] if '!' in text else ""  #comment
+    return ('Comment: ' + text[text.find('!') + 1:] if '!' in text else "")
 
 
 async def _split_roll_command(command: str):
@@ -41,17 +36,14 @@ async def _split_roll_command(command: str):
             rolls_valid = True
         if plus_count + minus_count + mul_count + div_count == 1:
             if plus_count:
-                dice_size, modifier = dice_size.split('+')
                 operator = '+'
             elif minus_count:
-                dice_size, modifier = dice_size.split('-')
                 operator = '-'
             elif mul_count:
-                dice_size, modifier = dice_size.split('*')
                 operator = '*'
             elif div_count:
-                dice_size, modifier = dice_size.split('/')
                 operator = '/'
+            dice_size, modifier = dice_size.split(operator)
             if modifier == '':
                 if modifier == '' and (mul_count or div_count):
                     modifier = 1
@@ -78,17 +70,16 @@ async def _roll(dice_size: int = 10,
     result = 0
     rolls = [random.randint(1, dice_size) for i in range(n_of_rolls)]
     rolls.sort(reverse=True)
+    result = sum(rolls)
     if roll_modifier_type:
         if roll_modifier_type == '+':
-            result = sum(rolls) + roll_modifier
+            result = result + roll_modifier
         elif roll_modifier_type == '-':
-            result = sum(rolls) - roll_modifier
+            result = result - roll_modifier
         elif roll_modifier_type == '*':
-            result = sum(rolls) * roll_modifier
+            result = result * roll_modifier
         elif roll_modifier_type == '/':
-            result = sum(rolls) / roll_modifier
-    else:
-        result = sum(rolls)
+            result = result / roll_modifier
     return rolls, result
 
 
@@ -217,7 +208,8 @@ class Rolling(commands.Cog, name='Dice rolling'):
                                                      and modifier2 == 0):
             await ctx.send('You cannot divide by 0.')
             return
-        if simult_rolls1 > self.__max_rolls or simult_rolls1 < 1 or simult_rolls2 > self.__max_rolls or simult_rolls2 < 1:
+        if (simult_rolls1 > self.__max_rolls) or (simult_rolls1 < 1) or (
+                simult_rolls2 > self.__max_rolls) or (simult_rolls2 < 1):
             await ctx.send(
                 f'You need to choose number of rolls between 1-{self.__max_rolls}'
             )

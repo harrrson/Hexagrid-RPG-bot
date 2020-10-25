@@ -19,7 +19,7 @@ class MusicPlayer(commands.Cog, name='Music module'):
         ):  # This ensures the client isn't overwritten during cog reloads.
             bot.lavalink = lavalink.Client(bot.user.id)
             bot.lavalink.add_node(
-                '127.0.0.1', 2333, 'youshallnotpass', 'eu',
+                '127.0.0.1', 2333, 'LVlinkmuzyka', 'eu',
                 'default-node')  # Host, Port, Password, Region, Name
             bot.add_listener(bot.lavalink.voice_update_handler,
                              'on_socket_response')
