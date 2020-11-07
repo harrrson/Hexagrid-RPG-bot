@@ -1,3 +1,2 @@
-aiomysql==0.0.20
 discord==1.0.1
 lavalink==3.1.2

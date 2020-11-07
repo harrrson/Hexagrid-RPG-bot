@@ -1,5 +1,4 @@
-/old_version/
-/lavalink/
+/.idea/
 /venv/
 secret_file.py
 __pycache__/
