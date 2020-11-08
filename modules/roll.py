@@ -18,11 +18,14 @@ async def _split_roll_command(command: str):
 	dice_size = 0
 	modifier = 0
 	operator = ''
+
 	command.lower()
+
 	plus_count = command.count('+')
 	minus_count = command.count('-')
 	mul_count = command.count('*')
 	div_count = command.count('/')
+
 	if command.count('d') == 1 and (plus_count + minus_count + mul_count + div_count) < 2 and not re.search(
 			'[a-ce-z!@#$%^&(){}[]:~`";=_,.?/|]', command):
 		rolls, dice_size = command.split('d')
@@ -33,22 +36,13 @@ async def _split_roll_command(command: str):
 				rolls = int(rolls)
 			rolls_valid = True
 		if plus_count + minus_count + mul_count + div_count == 1:
-			if plus_count:
-				operator = '+'
-			elif minus_count:
-				operator = '-'
-			elif mul_count:
-				operator = '*'
-			elif div_count:
-				operator = '/'
+			# only one of below variables can be one, so we got at max one character string
+			operator = ('+' * plus_count) + ('-' * minus_count) + ('*' * mul_count) + ('/' * div_count)
 			dice_size, modifier = dice_size.split(operator)
 			if modifier == '':
-				if modifier == '' and (mul_count or div_count):
-					modifier = 1
-					mod_valid = True
-				elif modifier == '' and (plus_count or minus_count):
-					modifier = 0
-					mod_valid = True
+				# modifier is 1 if we either multiply or divide, in other case is 0, and from upper condition, at max one can be 1
+				modifier = mul_count + div_count
+				mod_valid = True
 			elif modifier.isdigit():
 				modifier = int(modifier)
 				mod_valid = True
@@ -75,10 +69,9 @@ async def _roll(dice_size: int = 10, n_of_rolls: int = 1, roll_modifier: int = 0
 			result = result * roll_modifier
 		elif roll_modifier_type == '/':
 			result = result / roll_modifier
-
 	return rolls, result
 
-
+#TODO: Modify text formatting, make rolls appear in frame
 class Rolling(commands.Cog, name='Dice rolling'):
 	__max_rolls = 30
 	__max_dice = 100
@@ -103,6 +96,13 @@ class Rolling(commands.Cog, name='Dice rolling'):
 
 	@commands.group(invoke_without_command=True, help='Roll dices depending of the parameters given')
 	async def roll(self, ctx, rolls: typing.Optional[int] = 1, roll_command: str = 'd10', *, args=''):
+		"""
+		Rolling dice specified by user with modifiers
+		:param ctx: discord.Context
+		:param rolls: int [optional]
+		:param roll_command: str
+		:param args: str
+		"""
 		message = ['']
 		roll_results = []
 		if rolls > self.__max_rolls or rolls < 1:
@@ -145,12 +145,12 @@ class Rolling(commands.Cog, name='Dice rolling'):
 		else:
 			max_roll_message = f'\nHighest result: {max(roll_results)}'
 			min_roll_message = f'\nLowest result: {min(roll_results)}'
-			if len(message[message_fragments_count] +max_roll_message) <= 2000:
+			if len(message[message_fragments_count] + max_roll_message) <= 2000:
 				message[message_fragments_count] += max_roll_message
 			else:
 				message_fragments_count += 1
 				message[message_fragments_count] = max_roll_message
-			if len(message[message_fragments_count] +min_roll_message) <= 2000:
+			if len(message[message_fragments_count] + min_roll_message) <= 2000:
 				message[message_fragments_count] += min_roll_message
 			else:
 				message_fragments_count += 1
@@ -164,7 +164,15 @@ class Rolling(commands.Cog, name='Dice rolling'):
 			await ctx.send(part_message)
 
 	@roll.command(name='duel', help='Makes a duel between two players, and shows a winner')
-	async def duel(self, ctx, roll1='d10', roll2='d10', player1='', player2='', *, args=''):
+	async def duel(self, ctx, roll1='d10', roll2='d10', player1='Player 1', player2='Player 2', *, args=''):
+		"""
+		:param ctx: discord.Context
+		:param roll1: str
+		:param roll2: str
+		:param player1: str
+		:param player2: str
+		:param args: str
+		"""
 		valid_command1, simult_rolls1, dice_size1, modifier1, operator1 = await _split_roll_command(roll1)
 
 		valid_command2, simult_rolls2, dice_size2, modifier2, operator2 = await _split_roll_command(roll2)
@@ -186,18 +194,17 @@ class Rolling(commands.Cog, name='Dice rolling'):
 		roll_list2, result2 = await _roll(dice_size2, simult_rolls2, modifier2, operator2)
 		message = random.choice(self.__duel_texts) + '\n'
 		if player1 and player2:
-			message += "   " + player1 + " vs " + player2 + "\n"
+			message += f"   {player1} vs {player2}\n"
 		if result1 > result2:
 			message += "   " + ("  " * len(player1)) + "__**" + str(result1) + "**__      " + str(result2) + "\n"
 			if player1:
-				message += player1 + " wins this duel"
+				message += f"{player1} wins this duel"
 		if result1 < result2:
-			message += "   " + ("  " * len(player1)) + str(
-				result1) + "      __**" + str(result2) + "**__\n"
+			message += "   " + ("  " * len(player1)) + str(result1) + "      __**" + str(result2) + "**__\n"
 			if player2:
-				message += player2 + " wins this duel"
+				message += f"{player2} wins this duel"
 		if result1 == result2:
-			message += "   " + str(result1) + "  " + str(result2) + "\nDraw!"
+			message += f"   {str(result1)}  {str(result2)}\nDraw!"
 		if player1 and player2:
 			message += f'\n{player1}\'s rolls: {roll_list1}'
 			if simult_rolls1 > 1 or operator1:
@@ -206,28 +213,27 @@ class Rolling(commands.Cog, name='Dice rolling'):
 			if simult_rolls2 > 1 or operator2:
 				message += f' Result: {result2}'
 		else:
-			if result1 > result2 and not _counter:
-				message += "   " + ("  " * len(attacker_name)) + "__**" + str(result1) + "**__      " + str(
-					result2) + "\n"
-				if attacker_name:
-					message += attacker_name + " wins this duel"
-			if result1 < result2:
-				message += "   " + ("  " * len(attacker_name)) + str(result1) + "      __**" + str(result2) + "**__\n"
-				if defender_name:
-					message += defender_name + " wins this duel"
-			if result1 == result2:
-				message += "   " + str(result1) + "  " + str(result2) + "\nDraw!"
-			# If player names was given, write their names ad rolls
-			message += await _print_rolling_result(attacker_name, defender_name, result1, result2, roll_list1,
-			                                       roll_list2, simult_rolls1, simult_rolls2, operator1, operator2)
+			await ctx.send('Don\'t put empty strings when player names should be')
+			# if result1 > result2 and not _counter:
+			# 	message += "   " + ("  " * len(attacker_name)) + "__**" + str(result1) + "**__      " + str(
+			# 		result2) + "\n"
+			# 	if attacker_name:
+			# 		message += attacker_name + " wins this duel"
+			# if result1 < result2:
+			# 	message += "   " + ("  " * len(attacker_name)) + str(result1) + "      __**" + str(result2) + "**__\n"
+			# 	if defender_name:
+			# 		message += defender_name + " wins this duel"
+			# if result1 == result2:
+			# 	message += "   " + str(result1) + "  " + str(result2) + "\nDraw!"
+			# # If player names was given, write their names ad rolls
+			# message += await _print_rolling_result(attacker_name, defender_name, result1, result2, roll_list1,
+			#                                        roll_list2, simult_rolls1, simult_rolls2, operator1, operator2)
 		await ctx.send(message)
 
-	@roll.command(
-		name='fate',
-		help='Rolls two sided dice, and shows fate result depending on roll')
+	@roll.command(name='fate', help='Rolls two sided dice, and shows fate result depending on roll')
 	async def fate(self, ctx, *, args: str = ''):
 		result = random.randint(0, 1)
-		comment = _find_comment(args)
+		comment = await _find_comment(args)
 		if result:
 			await ctx.send('Fate is on your side :thumbsup:' + comment)
 		else:
@@ -237,9 +243,7 @@ class Rolling(commands.Cog, name='Dice rolling'):
 	async def _colour_roll(self, ctx, *, args: str = ''):
 		comment = await _find_comment(args)
 		result = random.choice(self.__colour_rolls[ctx.invoked_with])
-		await ctx.send(
-			f'{ctx.author.name}\'s roll: {result} ({ctx.invoked_with} dice)' +
-			comment)
+		await ctx.send(f'{ctx.author.name}\'s roll: {result} ({ctx.invoked_with} dice)' + comment)
 
 
 def setup(bot):
