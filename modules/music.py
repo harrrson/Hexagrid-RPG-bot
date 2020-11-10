@@ -6,6 +6,7 @@ import re
 import discord
 import lavalink
 from discord.ext import commands
+import secret_file
 
 url_rx = re.compile(r'https?://(?:www\.)?.+')
 
@@ -17,7 +18,7 @@ class MusicPlayer(commands.Cog, name='Music module'):
 		if not hasattr(bot, 'lavalink'):  # This ensures the client isn't overwritten during cog reloads.
 			bot.lavalink = lavalink.Client(bot.user.id)
 			bot.lavalink.add_node(
-				'127.0.0.1', 2333, 'LVlinkmuzyka', 'eu', 'default-node')  # Host, Port, Password, Region, Name
+				'127.0.0.1', secret_file.lavalink_port, secret_file.lavalink_password, 'eu', 'default-node')  # Host, Port, Password, Region, Name
 			bot.add_listener(bot.lavalink.voice_update_handler, 'on_socket_response')
 
 		lavalink.add_event_hook(self.track_hook)
@@ -77,7 +78,7 @@ class MusicPlayer(commands.Cog, name='Music module'):
 					'I need the `CONNECT` and `SPEAK` permissions.')
 
 			player.store('channel', ctx.channel.id)
-			await self.connect_to(ctx.guild.id,str(ctx.author.voice.channel.id))
+			await self.connect_to(ctx.guild.id, str(ctx.author.voice.channel.id))
 		else:
 			if int(player.channel_id) != ctx.author.voice.channel.id:
 				raise commands.CommandInvokeError('You need to be in my voicechannel.')
@@ -153,7 +154,7 @@ class MusicPlayer(commands.Cog, name='Music module'):
 
 			# You can attach additional information to audiotracks through kwargs, however this involves
 			# constructing the AudioTrack class yourself.
-			track = lavalink.models.AudioTrack(track,ctx.author.id,recommended=True)
+			track = lavalink.models.AudioTrack(track, ctx.author.id, recommended=True)
 			player.add(requester=ctx.author.id, track=track)
 
 		await ctx.send(embed=embed)

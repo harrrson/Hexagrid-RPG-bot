@@ -71,7 +71,8 @@ async def _roll(dice_size: int = 10, n_of_rolls: int = 1, roll_modifier: int = 0
 			result = result / roll_modifier
 	return rolls, result
 
-#TODO: Modify text formatting, make rolls appear in frame
+
+# TODO: Modify text formatting, make rolls appear in frame
 class Rolling(commands.Cog, name='Dice rolling'):
 	__max_rolls = 30
 	__max_dice = 100
@@ -214,20 +215,20 @@ class Rolling(commands.Cog, name='Dice rolling'):
 				message += f' Result: {result2}'
 		else:
 			await ctx.send('Don\'t put empty strings when player names should be')
-			# if result1 > result2 and not _counter:
-			# 	message += "   " + ("  " * len(attacker_name)) + "__**" + str(result1) + "**__      " + str(
-			# 		result2) + "\n"
-			# 	if attacker_name:
-			# 		message += attacker_name + " wins this duel"
-			# if result1 < result2:
-			# 	message += "   " + ("  " * len(attacker_name)) + str(result1) + "      __**" + str(result2) + "**__\n"
-			# 	if defender_name:
-			# 		message += defender_name + " wins this duel"
-			# if result1 == result2:
-			# 	message += "   " + str(result1) + "  " + str(result2) + "\nDraw!"
-			# # If player names was given, write their names ad rolls
-			# message += await _print_rolling_result(attacker_name, defender_name, result1, result2, roll_list1,
-			#                                        roll_list2, simult_rolls1, simult_rolls2, operator1, operator2)
+		# if result1 > result2 and not _counter:
+		# 	message += "   " + ("  " * len(attacker_name)) + "__**" + str(result1) + "**__      " + str(
+		# 		result2) + "\n"
+		# 	if attacker_name:
+		# 		message += attacker_name + " wins this duel"
+		# if result1 < result2:
+		# 	message += "   " + ("  " * len(attacker_name)) + str(result1) + "      __**" + str(result2) + "**__\n"
+		# 	if defender_name:
+		# 		message += defender_name + " wins this duel"
+		# if result1 == result2:
+		# 	message += "   " + str(result1) + "  " + str(result2) + "\nDraw!"
+		# # If player names was given, write their names ad rolls
+		# message += await _print_rolling_result(attacker_name, defender_name, result1, result2, roll_list1,
+		#                                        roll_list2, simult_rolls1, simult_rolls2, operator1, operator2)
 		await ctx.send(message)
 
 	@roll.command(name='fate', help='Rolls two sided dice, and shows fate result depending on roll')
