@@ -80,7 +80,6 @@ async def _roll(dice_size: int = 10, n_of_rolls: int = 1, roll_modifier: int = 0
 	return rolls, result
 
 
-# TODO: Modify text formatting, make rolls appear in frame
 class Rolling(commands.Cog, name='Dice rolling'):
 	__max_rolls = 20
 	__max_dice = 100
