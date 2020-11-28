@@ -2,11 +2,19 @@ import random
 import re
 import typing
 
+from discord import Embed
 from discord.ext import commands
 
 
 async def _find_comment(text: str) -> str:
-	return 'Comment: ' + text[text.find('!') + 1:] if '!' in text else ""
+	max_len = 50
+	if '!' in text:
+		if len(text) - text.find('!') + 1 < max_len:
+			return text[text.find('!') + 1:]
+		else:
+			return text[text.find('!') + 1:text.find('!') + max_len - 2] + '...'
+	else:
+		return ""
 
 
 async def _split_roll_command(command: str):
@@ -74,23 +82,18 @@ async def _roll(dice_size: int = 10, n_of_rolls: int = 1, roll_modifier: int = 0
 
 # TODO: Modify text formatting, make rolls appear in frame
 class Rolling(commands.Cog, name='Dice rolling'):
-	__max_rolls = 30
+	__max_rolls = 20
 	__max_dice = 100
 	__dice_colours = ('green', 'lime', 'yellow', 'white', 'orange', 'red', 'black')
-	__colour_rolls = {
-		'green': ['Small Fail', 'Big Success', 'Big Success', 'Big Success'],
-		'lime': ['Fail', 'Success', 'Big Success', 'Big Success'],
-		'yellow': ['Fail', 'Success', 'Success', 'Big Success'],
-		'white': ['Big Fail', 'Fail', 'Success', 'Big Success'],
-		'orange': ['Big Fail', 'Fail', 'Fail', 'Success'],
-		'red': ['Big Fail', 'Big Fail', 'Fail', 'Success'],
-		'black': ['Big Fail', 'Big Fail', 'Big Fail', 'Small Success']
-	}
-	__duel_texts = [
-		"Let's get ready to RUMBLEEEEE!",
-		"It's duel time!",
-		"Time for some dueling!"
-	]
+	__colour_rolls = {'green': ['Small Fail', 'Big Success', 'Big Success', 'Big Success'],
+	                  'lime': ['Fail', 'Success', 'Big Success', 'Big Success'],
+	                  'yellow': ['Fail', 'Success', 'Success', 'Big Success'],
+	                  'white': ['Big Fail', 'Fail', 'Success', 'Big Success'],
+	                  'orange': ['Big Fail', 'Fail', 'Fail', 'Success'],
+	                  'red': ['Big Fail', 'Big Fail', 'Fail', 'Success'],
+	                  'black': ['Big Fail', 'Big Fail', 'Big Fail', 'Small Success']
+	                  }
+	__duel_texts = ["Let's get ready to RUMBLEEEEE!", "It's duel time!", "Time for some dueling!"]
 
 	def __init__(self, bot):
 		self.bot = bot
@@ -106,6 +109,7 @@ class Rolling(commands.Cog, name='Dice rolling'):
 		"""
 		message = ['']
 		roll_results = []
+		roll_lists = []
 		if rolls > self.__max_rolls or rolls < 1:
 			await ctx.send(f'You need to choose number of rolls between 1-{self.__max_rolls}')
 			return
@@ -123,46 +127,23 @@ class Rolling(commands.Cog, name='Dice rolling'):
 			ctx.send(f'You need to choose dice between 2-{self.__max_dice}')
 		comment = await _find_comment(args)
 
-		message[0] = f'{ctx.author.name}\'s rolls:'
-		message_fragments_count = 0
+		embed = Embed(title=f'Rolls for {ctx.author.display_name}', color=0xff0000, description=comment)
 		for i in range(rolls):
 			roll_list, roll_result = await _roll(dice_size=dice_size, n_of_rolls=simult_rolls, roll_modifier=modifier,
 			                                     roll_modifier_type=operator)
 			roll_results.append(roll_result)
-			roll_message = f'{roll_list}'
+			roll_lists.append(roll_list)
+			field_rolls = f'{roll_list}'
+			field_title = f'Roll #{i + 1}'
 			if simult_rolls > 1 or operator:
-				roll_message += f' Result {roll_result}'
-			if len(message[message_fragments_count] + '\n' + roll_message) <= 2000:
-				message[message_fragments_count] = message[message_fragments_count] + '\n' + roll_message
-			else:
-				message_fragments_count += 1
-				message.append(roll_message)
-		if rolls == 1:
-			if len(message[message_fragments_count] + comment) <= 2000:
-				message[message_fragments_count] = message[message_fragments_count] + comment
-			else:
-				message_fragments_count += 1
-				message[message_fragments_count] = comment
-		else:
-			max_roll_message = f'\nHighest result: {max(roll_results)}'
-			min_roll_message = f'\nLowest result: {min(roll_results)}'
-			if len(message[message_fragments_count] + max_roll_message) <= 2000:
-				message[message_fragments_count] += max_roll_message
-			else:
-				message_fragments_count += 1
-				message[message_fragments_count] = max_roll_message
-			if len(message[message_fragments_count] + min_roll_message) <= 2000:
-				message[message_fragments_count] += min_roll_message
-			else:
-				message_fragments_count += 1
-				message[message_fragments_count] = min_roll_message
-			if len(message[message_fragments_count] + '\n' + comment) <= 2000:
-				message[message_fragments_count] += '\n' + comment
-			else:
-				message_fragments_count += 1
-				message[message_fragments_count] = comment
-		for part_message in message:
-			await ctx.send(part_message)
+				field_title += f': Result {roll_result}'
+			embed.add_field(name=field_title, value=field_rolls, inline=True)
+		if rolls > 1:
+			embed.insert_field_at(index=0, name='Highest/lowest result',
+			                      value=f'Highest result: {max(roll_results)}\nLowest result: {min(roll_results)}',
+			                      inline=False)
+		print(len(embed))
+		await ctx.send(embed=embed)
 
 	@roll.command(name='duel', help='Makes a duel between two players, and shows a winner')
 	async def duel(self, ctx, roll1='d10', roll2='d10', player1='Player 1', player2='Player 2', *, args=''):
@@ -193,58 +174,37 @@ class Rolling(commands.Cog, name='Dice rolling'):
 			ctx.send(f'You need to choose dice between 2-{self.__max_dice}')
 		roll_list1, result1 = await _roll(dice_size1, simult_rolls1, modifier1, operator1)
 		roll_list2, result2 = await _roll(dice_size2, simult_rolls2, modifier2, operator2)
-		message = random.choice(self.__duel_texts) + '\n'
-		if player1 and player2:
-			message += f"   {player1} vs {player2}\n"
+		embed = Embed(title=f'Duel battle: {player1} VS {player2}', colour=0xff0000)
+		embed.add_field(name=f'{player1}\'s roll', value=result1, inline=True)
+		embed.add_field(name=f'{player2}\'s roll', value=result2, inline=True)
+		# message = random.choice(self.__duel_texts) + '\n'
 		if result1 > result2:
-			message += "   " + ("  " * len(player1)) + "__**" + str(result1) + "**__      " + str(result2) + "\n"
-			if player1:
-				message += f"{player1} wins this duel"
-		if result1 < result2:
-			message += "   " + ("  " * len(player1)) + str(result1) + "      __**" + str(result2) + "**__\n"
-			if player2:
-				message += f"{player2} wins this duel"
-		if result1 == result2:
-			message += f"   {str(result1)}  {str(result2)}\nDraw!"
-		if player1 and player2:
-			message += f'\n{player1}\'s rolls: {roll_list1}'
-			if simult_rolls1 > 1 or operator1:
-				message += f' Result: {result1}'
-			message += f'\n{player2}\'s roll: {roll_list2}'
-			if simult_rolls2 > 1 or operator2:
-				message += f' Result: {result2}'
-		else:
-			await ctx.send('Don\'t put empty strings when player names should be')
-		# if result1 > result2 and not _counter:
-		# 	message += "   " + ("  " * len(attacker_name)) + "__**" + str(result1) + "**__      " + str(
-		# 		result2) + "\n"
-		# 	if attacker_name:
-		# 		message += attacker_name + " wins this duel"
-		# if result1 < result2:
-		# 	message += "   " + ("  " * len(attacker_name)) + str(result1) + "      __**" + str(result2) + "**__\n"
-		# 	if defender_name:
-		# 		message += defender_name + " wins this duel"
-		# if result1 == result2:
-		# 	message += "   " + str(result1) + "  " + str(result2) + "\nDraw!"
-		# # If player names was given, write their names ad rolls
-		# message += await _print_rolling_result(attacker_name, defender_name, result1, result2, roll_list1,
-		#                                        roll_list2, simult_rolls1, simult_rolls2, operator1, operator2)
-		await ctx.send(message)
+			embed.add_field(name=f'Winner:', value=player1, inline=False)
+		elif result1 < result2:
+			embed.add_field(name=f'Winner:', value=player2, inline=False)
+		elif result1 == result2:
+			embed.add_field(name=f'Draw!', inline=False)
+		embed.add_field(name='Players\' rolls:', value=f'{player1}: {roll_list1}\n{player2}: {roll_list2}')
+		await ctx.send(embed=embed)
 
 	@roll.command(name='fate', help='Rolls two sided dice, and shows fate result depending on roll')
 	async def fate(self, ctx, *, args: str = ''):
-		result = random.randint(0, 1)
 		comment = await _find_comment(args)
-		if result:
-			await ctx.send('Fate is on your side :thumbsup:' + comment)
+		embed = Embed(title=f'Fate roll for {ctx.author.display_name}', description=comment, color=0xff0000)
+		if random.randint(0, 1):
+			embed.add_field(name='Result', value='Fate is on your side :thumbsup:')
 		else:
-			await ctx.send('Fate is not on your side :thumbsdown:' + comment)
+			embed.add_field(name='Result', value='Fate is not on your side :thumbsdown:')
+		await ctx.send(embed=embed)
 
 	@roll.command(aliases=__dice_colours)
 	async def _colour_roll(self, ctx, *, args: str = ''):
 		comment = await _find_comment(args)
+		embed = Embed(title=f'Roll for {ctx.author.display_name}', color=0xff0000, description=comment)
+		embed.add_field(name='Dice colour', value=ctx.invoked_with.lower(), inline=False)
 		result = random.choice(self.__colour_rolls[ctx.invoked_with])
-		await ctx.send(f'{ctx.author.name}\'s roll: {result} ({ctx.invoked_with} dice)' + comment)
+		embed.add_field(name='Result', value=result, inline=True)
+		await ctx.send(embed=embed)
 
 
 def setup(bot):
