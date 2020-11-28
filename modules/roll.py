@@ -197,12 +197,18 @@ class Rolling(commands.Cog, name='Dice rolling'):
 		await ctx.send(embed=embed)
 
 	@roll.command(aliases=__dice_colours)
-	async def _colour_roll(self, ctx, *, args: str = ''):
+	async def _colour_roll(self, ctx, rolls: typing.Optional[int]=1, *, args: str = ''):
+		if rolls<1 or rolls>self.__max_rolls:
+			return await ctx.send(f'You need to choose number of rolls between 1-{self.__max_rolls}')
 		comment = await _find_comment(args)
 		embed = Embed(title=f'Roll for {ctx.author.display_name}', color=0xff0000, description=comment)
 		embed.add_field(name='Dice colour', value=ctx.invoked_with.lower(), inline=False)
-		result = random.choice(self.__colour_rolls[ctx.invoked_with])
-		embed.add_field(name='Result', value=result, inline=True)
+		if rolls==1:
+			embed.add_field(name='Result', value=random.choice(self.__colour_rolls[ctx.invoked_with]), inline=True)
+		elif rolls>1:
+			for i in range(rolls):
+				embed.add_field(name=f'Roll #{i+1}', value=random.choice(self.__colour_rolls[ctx.invoked_with]),
+				                inline=True)
 		await ctx.send(embed=embed)
 
 
