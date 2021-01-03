@@ -3,3 +3,4 @@ secret_file.py
 __pycache__/
 */*.yml
 /venv/
+*.env
