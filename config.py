@@ -1,10 +1,11 @@
 from dotenv import load_dotenv
 import os
 
-load_dotenv('.')
+load_dotenv('.env')
 
 # API credentials
 BOT_TOKEN = os.getenv("BOT_TOKEN")
+print(BOT_TOKEN)
 
 # Bot database credentials
 DB_LOGIN = os.getenv("DB_LOGIN")

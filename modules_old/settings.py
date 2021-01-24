@@ -1,0 +1,122 @@
+from discord.ext import commands
+
+import globals
+
+
+@commands.check
+async def check_guild_owner(ctx):
+	author = ctx.author.id
+	owner = ctx.guild.owner.id
+	if author == owner:
+		return True
+	else:
+		raise commands.CheckFailure()
+
+
+@commands.check
+async def check_permitted_roles(ctx):
+	permissions = globals.permitted_roles.get(ctx.guild.id)
+	print(ctx.author.roles)
+	if permissions:
+		print(permissions)
+		if not any(role.id in permissions for role in ctx.author.roles):
+			raise commands.CheckFailure()
+		else:
+			return True
+	else:
+		raise commands.CheckFailure()
+
+
+class Settings(commands.Cog):
+
+	def __init__(self, bot):
+		self.bot = bot
+
+	@commands.group(invoke_without_command=True)
+	@commands.guild_only()
+	async def settings(self, ctx, *, args):
+		await ctx.send('No valid command was given!')
+
+	@settings.command()
+	@commands.check_any(check_guild_owner)
+	async def change_prefix(self, ctx, prefix: str = '', *, args=None):
+		if prefix:
+			db_conn = globals.db_connection
+			if db_conn and not db_conn.is_closed():
+				result = await db_conn.execute(
+					f'UPDATE settings.prefixes SET prefix=\'{prefix}\' WHERE guild_id={str(ctx.guild.id)};')
+				result = result.split(' ')
+				if result[0].lower() == 'update' and result[1] == '1':
+					globals.prefixes[ctx.guild.id] = prefix
+					await ctx.send(f'New server prefix is \'{prefix}\'')
+			else:
+				await ctx.send('I have problem with connection to database. Try later.')
+		else:
+			await ctx.send('No prefix was given')
+
+	@settings.command()
+	@commands.check_any(check_guild_owner)
+	async def add_permission(self, ctx, role: str = '', *, args=None):
+		if role:
+			if role.isdigit():
+				role_id = int(role)
+			elif role.startswith('<@&') and role.endswith('>') and role[3: -1].isdigit():
+				role_id = int(role[3: -1])
+			else:
+				return await ctx.send('No valid role format found!')
+			if ctx.guild.get_role(role_id):
+				if globals.permitted_roles.get(ctx.guild.id) is None:
+					globals.permitted_roles[ctx.guild.id] = []
+				if role_id in globals.permitted_roles[ctx.guild.id]:
+					return await ctx.send('Role already have this permission!')
+				result = await globals.db_connection.execute(
+					f'INSERT INTO settings.permissions (guild_id,role_id,p_all,p_music) VALUES ({ctx.guild.id},{role_id},TRUE,TRUE);')
+				result = result.split(' ')
+				if result[0].lower() == 'insert' and result[2] == '1':
+					globals.permitted_roles[ctx.guild.id].append(role_id)
+					await ctx.send(f'Added permission to role with id {role_id}!')
+				else:
+					await ctx.send('Error appeared when sending data to DB. Try later!')
+			else:
+				await ctx.send(f'No role found with this ID: {role_id}!')
+		else:
+			await ctx.send('No role was given as parameter!')
+
+	@settings.command()
+	@commands.check_any(check_guild_owner)
+	async def remove_permission(self, ctx, role: str = '', *, args=None):
+		if role:
+			if role.isdigit():
+				role_id = int(role)
+			elif role.startswith('<@&') and role.endswith('>') and role[3: -1].isdigit():
+				role_id = int(role[3: -1])
+			else:
+				return await ctx.send('No valid role format found!')
+			if ctx.guild.get_role(role_id):
+				# check, if guild have any role set
+				if globals.permitted_roles.get(ctx.guild.id) is None or not globals.permitted_roles[ctx.guild.id]:
+					return await ctx.send('This server have no permitted roles set!')
+				# check, if given role is in permitted list
+				elif role_id not in globals.permitted_roles[ctx.guild.id]:
+					return await ctx.send(f'Role with id {role_id} do not have this permission!')
+				# else, remove role from this list
+				else:
+					result = await globals.db_connection.execute(f'DELETE FROM settings.permissions WHERE role_id'
+					                                        f'={role_id};')
+					result = result.split(' ')
+					if result[0].lower() == 'delete' and result[1] == '1':
+						globals.permitted_roles[ctx.guild.id].remove(role_id)
+						await ctx.send(f'Permission removed from role with id {role_id}')
+			else:
+				await ctx.send(f'No role found with this ID: {role_id}!')
+		else:
+			await ctx.send('No role was given as parameter!')
+
+	@settings.command()
+	@commands.check_any(check_permitted_roles)
+	async def test(self, ctx):
+		await ctx.send('Permisje działają')
+
+
+def setup(bot):
+	bot.add_cog(Settings(bot))
