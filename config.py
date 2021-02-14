@@ -5,7 +5,6 @@ load_dotenv('.env')
 
 # API credentials
 BOT_TOKEN = os.getenv("BOT_TOKEN")
-print(BOT_TOKEN)
 
 # Bot database credentials
 DB_LOGIN = os.getenv("DB_LOGIN")
@@ -17,6 +16,7 @@ DB_PORT = os.getenv("DB_PORT")
 DB_NAME = os.getenv("DB_NAME")
 
 # Lavalink misc
+LAVALINK_HOST= os.getenv("LAVALINK_HOST")
 LAVALINK_PORT = os.getenv("LAVALINK_PORT")
 LAVALINK_PASSWORD = os.getenv("LAVALINK_PASSWORD")
 

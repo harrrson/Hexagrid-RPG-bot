@@ -67,7 +67,7 @@ async def _split_roll_command(command: str):
     return is_valid, rolls, dice_size, modifier, operator, explosion
 
 
-async def _roll(dice_size: int = 10, n_of_rolls: int = 1, roll_modifier: int = 0, roll_modifier_type: str = '+'):
+def _roll(dice_size = 10, n_of_rolls = 1, roll_modifier = 0, roll_modifier_type = '+'):
     result = 0
     rolls = [random.randint(1, dice_size) for i in range(n_of_rolls)]
     rolls.sort(reverse=True)
