@@ -6,15 +6,18 @@ import os
 from config import BOT_TOKEN, DEFAULT_PREFIX, DB_HOST, DB_PORT, DB_LOGIN, DB_NAME, DB_PASSWORD
 
 # configure bot intents
+
 intents = Intents.none()
 intents.guilds = True
 intents.members = True
 intents.messages = True
+intents.voice_states = True
 
 
 async def create_connection(bot_instance):
-    bot_instance.db_conn = await connect(host=DB_HOST, port=DB_PORT, database=DB_NAME, user=DB_LOGIN,
-                                         password=DB_PASSWORD)
+    pass
+    # bot_instance.db_conn = await connect(host=DB_HOST, port=DB_PORT, database=DB_NAME, user=DB_LOGIN,
+    #                                      password=DB_PASSWORD)
     # bot_instance.prep_queries["prefix_select"] = await bot_instance.db_conn.prepare(
     #     'SELECT prefix FROM settings.prefixes WHERE guild_id=$1')
     # bot_instance.prep_queries["prefix_insert"] = await bot_instance.db_conn.prepare(
