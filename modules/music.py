@@ -133,7 +133,7 @@ class Music(commands.Cog, wavelink.WavelinkMixin):
             except AttributeError:
                 raise NoChannelSpecifiedException
 
-        player = self.bot.wavelink.get_player(guild_id=ctx.guild.id, cls=Player, context=ctx)
+        player: wavelink.Player = self.bot.wavelink.get_player(guild_id=ctx.guild.id, cls=Player, context=ctx)
         if player.is_connected:
             await ctx.send(f"I am connected to channel <#{player.channel_id}>")
 
@@ -145,7 +145,7 @@ class Music(commands.Cog, wavelink.WavelinkMixin):
         if not self.check_player(ctx.guild.id):
             raise NotConnectedException
 
-        player = self.bot.wavelink.get_player(guild_id=ctx.guild.id, cls=Player, context=ctx)
+        player: wavelink.Player = self.bot.wavelink.get_player(guild_id=ctx.guild.id, cls=Player, context=ctx)
         if ctx.author.voice.channel.id != player.channel_id:
             raise NoCommonChannelException
 
@@ -165,7 +165,7 @@ class Music(commands.Cog, wavelink.WavelinkMixin):
         if not tracks:
             return await ctx.send('Could not find any songs with that query.')
 
-        player = self.bot.wavelink.get_player(guild_id=ctx.guild.id, cls=Player, context=ctx)
+        player: wavelink.Player = self.bot.wavelink.get_player(guild_id=ctx.guild.id, cls=Player, context=ctx)
         if not player.is_connected:
             await ctx.invoke(self.join)
         player.stopped = False
@@ -191,7 +191,7 @@ class Music(commands.Cog, wavelink.WavelinkMixin):
         if not self.check_player(ctx.guild.id):
             raise NotConnectedException
 
-        player = self.bot.wavelink.get_player(guild_id=ctx.guild.id, cls=Player, context=ctx)
+        player: wavelink.Player = self.bot.wavelink.get_player(guild_id=ctx.guild.id, cls=Player, context=ctx)
 
         if ctx.author.voice.channel.id != player.channel_id:
             raise NoCommonChannelException
@@ -208,7 +208,7 @@ class Music(commands.Cog, wavelink.WavelinkMixin):
         if not self.check_player(ctx.guild.id):
             raise NotConnectedException
 
-        player = self.bot.wavelink.get_player(guild_id=ctx.guild.id, cls=Player, context=ctx)
+        player: wavelink.Player = self.bot.wavelink.get_player(guild_id=ctx.guild.id, cls=Player, context=ctx)
 
         if ctx.author.voice.channel.id != player.channel_id:
             raise NoCommonChannelException
@@ -221,7 +221,7 @@ class Music(commands.Cog, wavelink.WavelinkMixin):
         if not self.check_player(ctx.guild.id):
             raise NotConnectedException
 
-        player = self.bot.wavelink.get_player(guild_id=ctx.guild.id, cls=Player, context=ctx)
+        player: wavelink.Player = self.bot.wavelink.get_player(guild_id=ctx.guild.id, cls=Player, context=ctx)
 
         if ctx.author.voice.channel.id != player.channel_id:
             raise NoCommonChannelException
@@ -240,7 +240,7 @@ class Music(commands.Cog, wavelink.WavelinkMixin):
         if not self.check_player(ctx.guild.id):
             raise NotConnectedException
 
-        player = self.bot.wavelink.get_player(guild_id=ctx.guild.id, cls=Player, context=ctx)
+        player: wavelink.Player = self.bot.wavelink.get_player(guild_id=ctx.guild.id, cls=Player, context=ctx)
 
         if ctx.author.voice.channel.id != player.channel_id:
             raise NoCommonChannelException
@@ -258,7 +258,7 @@ class Music(commands.Cog, wavelink.WavelinkMixin):
         if not self.check_player(ctx.guild.id):
             raise NotConnectedException
 
-        player = self.bot.wavelink.get_player(guild_id=ctx.guild.id, cls=Player, context=ctx)
+        player: wavelink.Player = self.bot.wavelink.get_player(guild_id=ctx.guild.id, cls=Player, context=ctx)
 
         if ctx.author.voice.channel.id != player.channel_id:
             raise NoCommonChannelException
@@ -283,7 +283,7 @@ class Music(commands.Cog, wavelink.WavelinkMixin):
         if not self.check_player(ctx.guild.id):
             raise NotConnectedException
 
-        player = self.bot.wavelink.get_player(guild_id=ctx.guild.id, cls=Player, context=ctx)
+        player: wavelink.Player = self.bot.wavelink.get_player(guild_id=ctx.guild.id, cls=Player, context=ctx)
 
         if ctx.author.voice.channel.id != player.channel_id:
             raise NoCommonChannelException
@@ -293,7 +293,8 @@ class Music(commands.Cog, wavelink.WavelinkMixin):
 
         while player.queue.qsize() > 0:
             try:
-                dump = player.queue.get_nowait()
+                player.queue.get_nowait()
+                player.queue.task_done()
             except asyncio.QueueEmpty:
                 break
 
@@ -304,7 +305,7 @@ class Music(commands.Cog, wavelink.WavelinkMixin):
         if not self.check_player(ctx.guild.id):
             raise NotConnectedException
 
-        player = self.bot.wavelink.get_player(guild_id=ctx.guild.id, cls=Player, context=ctx)
+        player: wavelink.Player = self.bot.wavelink.get_player(guild_id=ctx.guild.id, cls=Player, context=ctx)
 
         if ctx.author.voice.channel.id != player.channel_id:
             raise NoCommonChannelException

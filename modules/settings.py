@@ -13,5 +13,5 @@ class Settings(commands.Cog):
     # @settings.command()
     # @command.check
 
-def setup(bot):
-    bot.add_cog(Settings(bot))
+# def setup(bot):
+#     bot.add_cog(Settings(bot))
