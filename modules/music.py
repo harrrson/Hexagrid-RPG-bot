@@ -132,12 +132,14 @@ class Music(commands.Cog, wavelink.WavelinkMixin):
                 channel = ctx.author.voice.channel
             except AttributeError:
                 raise NoChannelSpecifiedException
+        print(ctx.message.guild.id)
 
         player: wavelink.Player = self.bot.wavelink.get_player(guild_id=ctx.guild.id, cls=Player, context=ctx)
         if player.is_connected:
             await ctx.send(f"I am connected to channel <#{player.channel_id}>")
 
         await ctx.send(f'Connecting to **`{channel.name}`**')
+        print(channel.id)
         await player.connect(channel.id)
 
     @music.command()

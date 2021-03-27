@@ -201,8 +201,9 @@ class Rolling(commands.Cog, name="Dice rolling."):
                                   inline=False)
         await ctx.send(embed=embed)
 
-    @roll.command(name='duel', help='Makes a duel between two players, and shows a winner')
-    async def duel(self, ctx, roll1='d10', roll2='d10', player1='Player 1', player2='Player 2', *, args=''):
+    @roll.command(aliases=('duel', 'cduel'), help='Makes a duel between two players, and shows a winner')
+    async def _duel(self, ctx: commands.Context, roll1='d10', roll2='d10', player1='Player 1', player2='Player 2', *,
+                    args=''):
         """
         :param ctx: discord.Context
         :param roll1: str
@@ -233,12 +234,18 @@ class Rolling(commands.Cog, name="Dice rolling."):
         embed = Embed(title=f'Duel battle: {player1} VS {player2}', colour=0xff0000)
         embed.add_field(name=f'{player1}\'s roll', value=result1, inline=True)
         embed.add_field(name=f'{player2}\'s roll', value=result2, inline=True)
-        if result1 > result2:
-            embed.add_field(name=f'Winner:', value=player1, inline=False)
-        elif result1 < result2:
-            embed.add_field(name=f'Winner:', value=player2, inline=False)
-        elif result1 == result2:
-            embed.add_field(name=f'Draw!',value='No winner!', inline=False)
+        if ctx.invoked_with == 'duel':
+            if result1 > result2:
+                embed.add_field(name=f'Winner:', value=player1, inline=False)
+            elif result1 < result2:
+                embed.add_field(name=f'Winner:', value=player2, inline=False)
+            elif result1 == result2:
+                embed.add_field(name=f'Draw!', value='No winner!', inline=False)
+        elif ctx.invoked_with == 'cduel':
+            if result1 > (result2 + 2):
+                embed.add_field(name=f'Winner:', value=f'{player1}\nCounter failed!', inline=False)
+            else:
+                embed.add_field(name=f'Winner:', value=f'{player2}\nCounter succesfull!', inline=False)
         embed.add_field(name='Players\' rolls:', value=f'{player1}: {roll_list1}\n{player2}: {roll_list2}')
         await ctx.send(embed=embed)
 
