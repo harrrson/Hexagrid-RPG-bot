@@ -242,7 +242,7 @@ class Rolling(commands.Cog, name="Dice rolling."):
             elif result1 == result2:
                 embed.add_field(name=f'Draw!', value='No winner!', inline=False)
         elif ctx.invoked_with == 'cduel':
-            if result1 > (result2 + 2):
+            if result1 > (result2-3):
                 embed.add_field(name=f'Winner:', value=f'{player1}\nCounter failed!', inline=False)
             else:
                 embed.add_field(name=f'Winner:', value=f'{player2}\nCounter succesfull!', inline=False)
