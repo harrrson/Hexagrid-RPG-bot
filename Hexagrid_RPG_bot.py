@@ -2,6 +2,7 @@ from discord.ext import commands
 from discord import Intents, Message
 from asyncpg import Connection, connect
 import os
+from memory_profiler import memory_usage
 
 from config import BOT_TOKEN, DEFAULT_PREFIX, DB_HOST, DB_PORT, DB_LOGIN, DB_NAME, DB_PASSWORD
 
@@ -79,6 +80,7 @@ async def on_connect():
 async def on_ready():
     print("Connected as {0}".format(bot.user.name))
     for filename in os.listdir('./modules'):
+        if filename == 'music.py': continue
         if filename.endswith('.py'):
             try:
                 bot.load_extension(f'modules.{filename[:-3]}')
@@ -98,6 +100,8 @@ async def on_message(msg: Message):
         prefix = bot.prefixes.get(msg.guild.id, DEFAULT_PREFIX)
         await msg.channel.send(
             "Prefix for this guild is '%s'" % prefix + (", take care to spaces" if " " in prefix else ""))
+    if msg.content.startswith("zamknij bota"):
+        await bot.close()
     await bot.process_commands(msg)
 
 
@@ -149,5 +153,7 @@ async def test(ctx, *args):
     await ctx.send("Działa")
     return
 
+mem_usage = memory_usage()
+print(f'Memory usage pre-run: {mem_usage[0]} MB')
 
 bot.run(BOT_TOKEN)
