@@ -2,6 +2,7 @@ from discord.ext import commands
 from discord import Intents, Message
 from asyncpg import Connection, connect
 import os
+import argparse
 from memory_profiler import memory_usage
 
 from config import BOT_TOKEN, DEFAULT_PREFIX, DB_HOST, DB_PORT, DB_LOGIN, DB_NAME, DB_PASSWORD
@@ -64,6 +65,11 @@ async def guild_prefix(bot, message):
 # Bot initialization
 bot = commands.Bot(command_prefix=guild_prefix, case_insensitive=True, intents=intents)
 
+# CLI arguments
+parser = argparse.ArgumentParser(description='Bot CLI arguments')
+parser.add_argument('-m', '--music', help='load music module', action='store_true')
+args = parser.parse_args()
+
 # Initialization of global variables stored in bot class
 bot.prep_queries = {}
 bot.prefixes = {}
@@ -80,7 +86,7 @@ async def on_connect():
 async def on_ready():
     print("Connected as {0}".format(bot.user.name))
     for filename in os.listdir('./modules'):
-        if filename == 'music.py': continue
+        if filename == 'music.py' and not args.music: continue
         if filename.endswith('.py'):
             try:
                 bot.load_extension(f'modules.{filename[:-3]}')
